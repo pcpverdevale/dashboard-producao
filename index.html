@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Produção</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>Dashboard de Produção Anual</h1>
+        </header>
+
+        <section class="grid-section kpi-section">
+            <div class="card">
+                <h3>Nº DE PEDIDOS (<span class="ano-vigente"></span>)</h3>
+                <p id="kpi-pedidos">...</p>
+            </div>
+            <div class="card">
+                <h3>TOTAL DE ITENS (<span class="ano-vigente"></span>)</h3>
+                <p id="kpi-total-itens">...</p>
+            </div>
+            <div class="card">
+                <h3>ITENS FINALIZADOS (<span class="ano-vigente"></span>)</h3>
+                <p id="kpi-itens-finalizados">...</p>
+            </div>
+        </section>
+
+        <section class="grid-section charts-section">
+            <div class="card">
+                <h3>Progresso Geral de Itens (Todos os Anos)</h3>
+                <div class="chart-container">
+                    <canvas id="geralItensChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Distribuição de Status (<span class="ano-vigente"></span>)</h3>
+                <div class="chart-container">
+                    <canvas id="statusDonutChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid-section tables-section">
+            <div class="card">
+                <h3>Resumo Anual</h3>
+                <div id="tabela-anual-container"></div>
+            </div>
+            <div class="card">
+                <h3>Status (<span class="ano-vigente"></span>)</h3>
+                <div id="tabela-status-container"></div>
+            </div>
+        </section>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
