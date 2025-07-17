@@ -8,9 +8,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Carregando dados, por favor aguarde...</p>
+    </div>
+
     <div class="dashboard-container">
         <header>
-            <h1>Dashboard de Produção Anual</h1>
+            <h1 style="font-size: 2.2rem; font-weight: bold; margin-bottom: 0.5rem;">MÓVEIS VERDE VALE</h1>
+            <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 0;">DASHBOARD DE PRODUÇÃO ANUAL</p>
+            
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="theme-checkbox">
+                    <input type="checkbox" id="theme-checkbox" />
+                    <div class="slider round"></div>
+                </label>
+            </div>
         </header>
 
         <section class="grid-section kpi-section">
@@ -54,7 +67,18 @@
             </div>
         </section>
 
-    </div>
+        <section class="grid-section levantamento-section">
+            <div class="card">
+                <div class="card-header-com-seletor">
+                    <h3>LEVANTAMENTO PRODUÇÃO</h3>
+                    <select id="levantamento-ano-seletor"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="levantamentoChart"></canvas>
+                </div>
+            </div>
+        </section>
+        </div>
     <script src="script.js"></script>
 </body>
 </html>
