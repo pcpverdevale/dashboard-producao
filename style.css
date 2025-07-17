@@ -230,6 +230,10 @@ body.light-theme .card-header-com-seletor select {
     top: 50%;
     right: 1rem;
     transform: translateY(-50%);
+    /* Linhas adicionadas/modificadas abaixo */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
 
 .theme-switch {
@@ -285,4 +289,18 @@ input:checked + .slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+/* Novas regras adicionadas abaixo */
+.theme-label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.theme-icon {
+    width: 20px;
+    height: 20px;
+    stroke: var(--text-secondary);
+    stroke-width: 2;
 }
