@@ -1,18 +1,5 @@
 /* TEMA ESCURO (Padrão) */
 :root {
-    --bg-dark: #1a2e28;
-    --bg-main: #203a33; /*<-- Cor principal do fundo */
-    --card-bg: #29483f; /*<-- Cor de fundo dos cards */
-    --primary-green: #778756; /*<-- Cor de destaque principal (KPIs, etc) */
-    --light-green: #bcd192; /*<-- Cor de destaque secundária */
-    --text-primary: #f0f0f0; /*<-- Cor do texto principal */
-    --text-secondary: #a0b3ac; /*<-- Cor do texto secundário (títulos dos cards) */
-    --border-color: #3a5c51; /*<-- Cor das bordas */
-    --row-highlight: #2f5248; /*<-- Cor da linha da tabela ao passar o mouse */
-}
-
-/* TEMA CLARO (Opcional) */
-body.light-theme {
     --bg-dark: #e6f0e7;
     --bg-main: #d0e8d2;
     --card-bg: #c1dfc4;
@@ -22,6 +9,19 @@ body.light-theme {
     --text-secondary: #555;
     --border-color: #a2bca5;
     --row-highlight: #b8d7ba;
+}
+
+/* TEMA CLARO (Opcional) */
+body.light-theme {
+    --bg-dark: #1a2e28;
+    --bg-main: #203a33; /*<-- Cor principal do fundo */
+    --card-bg: #29483f; /*<-- Cor de fundo dos cards */
+    --primary-green: #778756; /*<-- Cor de destaque principal (KPIs, etc) */
+    --light-green: #bcd192; /*<-- Cor de destaque secundária */
+    --text-primary: #f0f0f0; /*<-- Cor do texto principal */
+    --text-secondary: #a0b3ac; /*<-- Cor do texto secundário (títulos dos cards) */
+    --border-color: #3a5c51; /*<-- Cor das bordas */
+    --row-highlight: #2f5248; /*<-- Cor da linha da tabela ao passar o mouse */
 }
 
 * {
