@@ -1,66 +1,100 @@
-// URL do seu aplicativo web do Google
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmnXXRUhJIigPctFu2jKLV00ZXf8N9e2fYAEwF_NcIp54fGJf1jvrDooyrSSM2cwmn/exec";
+// Adiciona uma variável para guardar os dados do dashboard após o primeiro carregamento
+let dashboardData = null;
 
-// Armazenar instâncias de gráficos para destruí-las antes de redesenhar
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-checkbox');
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+
+    // Função para definir o tema e redesenhar os gráficos instantaneamente
+    const setTheme = (theme) => {
+        document.body.classList.toggle('light-theme', theme === 'light');
+        themeToggle.checked = (theme === 'light');
+
+        // Se já temos os dados guardados, apenas redesenha a UI sem buscar na rede
+        if (dashboardData) {
+            populateUI(dashboardData);
+        }
+    };
+
+    if (currentTheme === 'light') {
+        setTheme('light');
+    }
+
+    themeToggle.addEventListener('change', (e) => {
+        const newTheme = e.target.checked ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        setTheme(newTheme);
+    });
+    
+    // Inicia o carregamento inicial dos dados
+    fetchDashboardData();
+});
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby57KhE1sU-_3Mk3xzerV26Qkon-NQpLri7yp194k8InYAD3hm5irWbXpD7rgMk7BOi/exec";
 let chartInstances = {};
 
-// NOVA PALETA: Cores mais saturadas e distintas para cada status
 const vibrantStatusColorMap = {
-    "PROJETO":    '#87CEFA', // Azul Céu Claro
-    "PCP":        '#FFB347', // Laranja Pastel
-    "REVISADO":   '#CF9EF0', // Lilás Claro
-    "CORTANDO":   '#88D8B0', // Verde Menta Forte (distinto)
-    "CORTADO":    '#A1CFF0', // Azul Céu (distinto)
-    "NO LOCAL":   '#FF9AA2', // Vermelho/Rosa Suave
-    "MARCENARIA": '#E6C8A4', // Bege/Tan
-    "EXPEDIÇÃO":  '#B5EAD7', // Verde Menta Claro
-    "PRÉ-MONT.":  '#FFDAC1', // Pêssego
-    "MONTAGEM":   '#FDFD96', // Amarelo Pastel
-    "TARCISIO":   '#B19CD9', // Roxo Pastel
-    "FINALIZADO": '#FF6961', // Vermelho Pastel Forte
-    "DEFAULT":    '#D3D3D3'  // Cinza Claro
+    "PROJETO": '#87CEFA', "PCP": '#FFB347', "REVISADO": '#CF9EF0', "CORTANDO": '#88D8B0',
+    "CORTADO": '#A1CFF0', "NO LOCAL": '#FF9AA2', "MARCENARIA": '#E6C8A4', "EXPEDIÇÃO": '#B5EAD7',
+    "PRÉ-MONT.": '#FFDAC1', "MONTAGEM": '#FDFD96', "TARCISIO": '#B19CD9', "FINALIZADO": '#FF6961',
+    "DEFAULT": '#D3D3D3'
 };
 
+function getCssVar(varName) {
+    return getComputedStyle(document.body).getPropertyValue(varName).trim();
+}
 
 async function fetchDashboardData() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.classList.remove('hidden');
+
     try {
         const response = await fetch(SCRIPT_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+        
+        // Guarda os dados na nossa variável global pela primeira vez
+        dashboardData = data; 
+        
         if (data.error) throw new Error(data.error);
-
         populateUI(data);
-
     } catch (error) {
         console.error("Falha ao buscar dados do dashboard:", error);
         alert("Não foi possível carregar os dados do dashboard: " + error.message);
+    } finally {
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
     }
 }
 
 function populateUI(data) {
-    const { dadosAnuais, resumoStatusAnoVigente, anoVigente } = data;
+    const { dadosAnuais, resumoStatusAnoVigente, anoVigente, dadosLevantamento } = data;
 
     document.querySelectorAll('.ano-vigente').forEach(el => el.textContent = anoVigente);
-
     const dadosAnoVigente = dadosAnuais?.[anoVigente] || { numPedidos: 0, totalItens: 0, itensFinalizados: 0 };
     document.getElementById('kpi-pedidos').textContent = dadosAnoVigente.numPedidos;
     document.getElementById('kpi-total-itens').textContent = dadosAnoVigente.totalItens;
     document.getElementById('kpi-itens-finalizados').textContent = dadosAnoVigente.itensFinalizados;
-
+    
     const progressoContainer = document.querySelector('#geralItensChart').closest('.card');
     progressoContainer.querySelector('h3').innerHTML = `Progresso de Itens (<span class="ano-vigente">${anoVigente}</span>)`;
-    const itensRestantes = dadosAnoVigente.totalItens - dadosAnoVigente.itensFinalizados;
-    createProgressoChart('geralItensChart', dadosAnoVigente.itensFinalizados, itensRestantes);
-
-    createStatusChart('statusDonutChart', resumoStatusAnoVigente);
-
+    createProgressoChart('geralItensChart', dadosAnoVigente.itensFinalizados, dadosAnoVigente.totalItens - dadosAnoVigente.itensFinalizados);
+    
+    const statusSemFinalizado = { ...resumoStatusAnoVigente };
+    delete statusSemFinalizado['FINALIZADO'];
+    
+    createStatusChart('statusDonutChart', statusSemFinalizado);
     gerarTabelaAnual(dadosAnuais);
-    gerarTabelaStatus(resumoStatusAnoVigente);
+    gerarTabelaStatus(statusSemFinalizado);
+
+    if (dadosLevantamento && Object.keys(dadosLevantamento).length > 0) {
+      setupLevantamentoChart(dadosLevantamento);
+    }
 }
 
 function createProgressoChart(canvasId, finalizados, restantes) {
     if (chartInstances?.[canvasId]) chartInstances[canvasId].destroy();
-
     const ctx = document.getElementById(canvasId)?.getContext('2d');
     if (!ctx) return;
     chartInstances[canvasId] = new Chart(ctx, {
@@ -69,79 +103,36 @@ function createProgressoChart(canvasId, finalizados, restantes) {
             labels: ['Finalizados', 'Restantes'],
             datasets: [{
                 data: [finalizados, restantes],
-                backgroundColor: [
-                    '#a6c6de', // Azul Pastel
-                    '#e9a3a3'  // Vermelho Pastel
-                ],
-                borderColor: '#203a33',
-                borderWidth: 2,
-                hoverOffset: 4
+                backgroundColor: [ getCssVar('--primary-green'), getCssVar('--border-color') ],
+                borderColor: getCssVar('--card-bg'), 
+                borderWidth: 2, hoverOffset: 4
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '60%',
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        color: '#a0b3ac',
-                        padding: 20
-                    }
-                }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: true, position: 'bottom', labels: { color: getCssVar('--text-secondary'), padding: 20 } } } }
     });
 }
 
 function createStatusChart(canvasId, statusData) {
     if (chartInstances?.[canvasId]) chartInstances[canvasId].destroy();
-
     const labels = Object.keys(statusData).filter(status => statusData?.[status] > 0);
     const data = labels.map(status => statusData?.[status]);
-    // AQUI a mágica acontece, usando o novo mapa de cores
     const backgroundColors = labels.map(status => vibrantStatusColorMap[status] || vibrantStatusColorMap['DEFAULT']);
-
     const ctx = document.getElementById(canvasId)?.getContext('2d');
     if (!ctx) return;
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderColor: '#203a33',
-                borderWidth: 2,
-                hoverOffset: 4
-            }]
+            datasets: [{ data: data, backgroundColor: backgroundColors, borderColor: getCssVar('--card-bg'), borderWidth: 2, hoverOffset: 4 }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '60%',
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        color: '#a0b3ac',
-                        padding: 15,
-                        boxWidth: 15,
-                        font: { size: 11 }
-                    }
-                }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: true, position: 'bottom', labels: { color: getCssVar('--text-secondary'), padding: 15, boxWidth: 15, font: { size: 11 } } } } }
     });
 }
 
 function gerarTabelaAnual(dados) {
     const container = document.getElementById('tabela-anual-container');
     if (!container) return;
-    const anos = Object.keys(dados).sort((a,b) => a - b);
+    const anos = Object.keys(dados).sort((a, b) => a - b);
     let tableHTML = `<table><thead><tr><th>Ano</th><th>Nº de Pedidos</th><th>Total de Itens</th><th>Itens Finalizados</th></tr></thead><tbody>`;
     anos.forEach(ano => {
         const d = dados?.[ano];
@@ -163,4 +154,64 @@ function gerarTabelaStatus(dados) {
     container.innerHTML = tableHTML;
 }
 
-document.addEventListener('DOMContentLoaded', fetchDashboardData);
+function setupLevantamentoChart(dados) {
+    const seletor = document.getElementById('levantamento-ano-seletor');
+    if (!seletor) return;
+    const anos = Object.keys(dados).sort((a, b) => b - a); 
+
+    if (anos.length === 0) return; 
+
+    seletor.innerHTML = anos.map(ano => `<option value="${ano}">${ano}</option>`).join('');
+    createLevantamentoGroupedBarChart(anos[0], dados[anos[0]]);
+    seletor.addEventListener('change', (e) => {
+        createLevantamentoGroupedBarChart(e.target.value, dados[e.target.value]);
+    });
+}
+
+function createLevantamentoGroupedBarChart(ano, dadosDoAno) {
+    const canvasId = 'levantamentoChart';
+    if (chartInstances?.[canvasId]) chartInstances[canvasId].destroy();
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+
+    const labels = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const cores = {
+        chapa: getCssVar('--primary-green'), 
+        fita: getCssVar('--light-green')
+    };
+
+    chartInstances[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'CHAPA CORTADA (m²)',
+                    data: dadosDoAno.chapaCortada,
+                    backgroundColor: cores.chapa,
+                    borderColor: cores.chapa,
+                    borderWidth: 1
+                },
+                {
+                    label: 'FITA COLADA (dam)',
+                    data: dadosDoAno.fitaColada,
+                    backgroundColor: cores.fita,
+                    borderColor: cores.fita,
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { color: getCssVar('--text-secondary') }, grid: { color: getCssVar('--border-color') } },
+                x: { ticks: { color: getCssVar('--text-secondary') }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: true, position: 'top', labels: { color: getCssVar('--text-secondary') } },
+                title: { display: false }
+            }
+        }
+    });
+}
